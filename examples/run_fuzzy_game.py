@@ -1,9 +1,7 @@
 import time
 import random
-from src.kessler_game.controller import *
-from src.kessler_game import Scenario, KesslerGame, GraphicsType
+from kesslergame import Scenario, KesslerGame
 from Controller import NewController
-from test_fuzzy_controllers import T1Controller, T2Controller
 
 
 def timeout(input_data):
@@ -27,7 +25,7 @@ class FuzzyController(ControllerBase):
 """
 
 
-def CILrun():
+def cil_run():
     if __name__ == "__main__":
         # Available settings
         settings = {
@@ -43,12 +41,14 @@ def CILrun():
         game = KesslerGame(settings=settings)
 
         scenario_ship = Scenario(name="Multi-Ship",
+
                                  num_asteroids=5,
                                  ship_states=[{"position": (300, 400), "angle": 0, "lives": 3, "team": 1},
                                               {"position": (700, 400), "angle": -10, "lives": 3, "team": 2},
                                               ],
                                  ammo_limit_multiplier=0.9)
-        controllers = [NewController(), NewController()]
+        controllers = [NewController([-14.319, 51.265, 217.21,   86.628]), NewController([-14.319, 51.265, 217.21,   86.628])]
+
         pre = time.perf_counter()
         score, perf_data = game.run(scenario=scenario_ship, controllers=controllers)
         print('Scenario eval time: '+str(time.perf_counter()-pre))
@@ -57,4 +57,5 @@ def CILrun():
         print('Deaths: ' + str([team.deaths for team in score.teams]))
         print('Accuracy: ' + str([team.accuracy for team in score.teams]))
         print('Mean eval time: ' + str([team.mean_eval_time for team in score.teams]))
-CILrun()
+
+cil_run()
