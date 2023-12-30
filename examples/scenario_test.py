@@ -5,7 +5,7 @@
 
 import time
 
-from src.kesslergame import Scenario, KesslerGame, GraphicsType
+from kessler_game.src.kesslergame import Scenario, KesslerGame, GraphicsType
 from test_controller import TestController
 from graphics_both import GraphicsBoth
 
@@ -13,7 +13,7 @@ from graphics_both import GraphicsBoth
 my_test_scenario = Scenario(name='Test Scenario',
                             num_asteroids=10,
                             ship_states=[
-                                {'position': (400, 400), 'angle': 90, 'lives': 3, 'team': 1, "mines_remaining": 3},
+                                {'position': (400, 400), 'angle': 90, 'lives': 3, 'team': 1, "mines_remaining": 30},
                                 # {'position': (400, 600), 'angle': 90, 'lives': 3, 'team': 2, "mines_remaining": 3},
                             ],
                             map_size=(1000, 800),

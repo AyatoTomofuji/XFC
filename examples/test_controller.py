@@ -3,7 +3,7 @@
 # NOTICE: This file is subject to the license agreement defined in file 'LICENSE', which is part of
 # this source code package.
 
-from src.kesslergame import KesslerController
+from kessler_game.src.kesslergame import KesslerController
 from typing import Dict, Tuple
 
 
@@ -29,10 +29,10 @@ class TestController(KesslerController):
             bool: mine deployment control value. Lays mine if true
         """
 
-        thrust = 0
+        thrust = 400
         turn_rate = 0
         fire = False
-        drop_mine = False
+        drop_mine = True
 
         return thrust, turn_rate, fire, drop_mine
 
