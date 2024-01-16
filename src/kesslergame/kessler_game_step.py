@@ -54,6 +54,7 @@ class Game_step:
         self.bullets = []
         self.mines = []
 
+
         # Initialize Scoring class
         self.score = Score(scenario)
         self.controllers = controllers
