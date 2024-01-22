@@ -5,6 +5,7 @@
 
 import time
 
+import gym
 import numpy as np
 from typing import Dict, Any, List
 from enum import Enum
@@ -27,10 +28,15 @@ class StopReason(Enum):
 
 
 class Game_step:
-    def __init__(self, settings: Dict[str, Any] = None, scenario=None, controllers=None ):
+    def __init__(self, settings: Dict[str, Any] = None,  ):
 
         if settings is None:
-            settings = {}
+            settings = {
+            'graphics_type': GraphicsType.NoGraphics,
+
+            }
+
+        self.action_space = gym.spaces.Box(low=np.array([-480, -180]), high=np.array([480, 180]), shape=(2,), dtype=np.float32)
         # Game settings
         self.frequency = settings.get("frequency", 30.0)
         self.time_step = 1 / settings.get("frequency", 30.0)
@@ -49,6 +55,12 @@ class Game_step:
             self.UI_settings = {'ships': True, 'lives_remaining': True, 'accuracy': True,
                                 'asteroids_hit': True, 'shots_fired': True, 'bullets_remaining': True,
                                 'controller_name': True}
+
+
+
+
+    def reset(self, scenario=None, controllers=None):
+        self.scenario = scenario
         self.asteroids = scenario.asteroids()
         self.ships = scenario.ships()
         self.bullets = []
@@ -67,11 +79,20 @@ class Game_step:
         for controller, ship in zip(self.controllers, self.ships):
             controller.ship_id = ship.id
             ship.controller = controller
-        self.scenario = scenario
+        liveships = [ship for ship in self.ships if ship.alive]
 
-
-
-
+        game_state = {
+            'asteroids': [asteroid.state for asteroid in self.asteroids],
+            'ships': [ship.state for ship in liveships],
+            'bullets': [bullet.state for bullet in self.bullets],
+            'mines': [mine.state for mine in self.mines],
+            'map_size': self.scenario.map_size,
+            'time': self.sim_time,
+            'time_step': self.step,
+        }
+        state = controllers[0].actions(self, ownship=self.ships[0].ownstate, input_data=game_state)
+        state = torch.tensor(state, dtype=torch.float32)
+        return state
     def run_step(self, actions):
 
 
@@ -94,7 +115,6 @@ class Game_step:
 
         # Initialize list of dictionary for performance tracking (will remain empty if perf_tracker is false
         perf_list = []
-        states = []
         # Get perf time at the start of time step evaluation and initialize performance tracker
         step_start = time.perf_counter()
         perf_dict = OrderedDict()
@@ -134,7 +154,11 @@ class Game_step:
                 # Evaluate each controller letting control be applied
                 if self.controllers[idx].ship_id != ship.id:
                     raise RuntimeError("Controller and ship ID do not match")
-                ship.thrust, ship.turn_rate, ship.fire, ship.drop_mine, state = actions
+                states = self.controllers[idx].actions(self, ship.ownstate, game_state)
+                ship.thrust = actions[0][0]
+                ship.turn_rate = actions[0][1]
+                ship.fire = True
+                ship.mine = False
             # Update controller evaluation time if performance tracking
             if self.perf_tracker:
                 controller_time = time.perf_counter() - t_start if ship.alive else 0.00
@@ -194,6 +218,7 @@ class Game_step:
                     bullet.owner.asteroids_hit += 1
                     bullet.owner.bullets_hit += 1
                     bullet.destruct()
+                    print("hit")
                     check = 1
                     bullet_remove_idxs.append(idx_bul)
                     # Asteroid destruct function and mark for removal
@@ -244,6 +269,7 @@ class Game_step:
                         # Asteroid destruct function and mark for removal
                         asteroids.extend(asteroid.destruct(impactor=ship))
                         asteroid_remove_idxs.append(idx_ast)
+                        print("collision")
                         check -= 10
                         # Stop checking this ship's collisions
                         break
@@ -312,10 +338,9 @@ class Game_step:
         ############################################
 
         # Close graphics display
+        #print(game_state)
 
         # Finalize score class before returning
         self.score.finalize(self.sim_time, self.stop_reason, self.ships)
-
-        # Return the score and stop condition
-        return self.score, perf_list, game_state
+        return states, check, 0, 0, True
 
