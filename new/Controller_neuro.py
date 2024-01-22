@@ -2,6 +2,7 @@ import math
 from typing import Tuple, Dict
 
 import joblib
+import torch
 
 from kessler_game.src.kesslergame import KesslerController, Ship
 import numpy as np
@@ -19,16 +20,22 @@ class Controller_neuro(KesslerController):
         """
 
 
-    def __init__(self):
-        file = 'NNmodel.sav'
+    def __init__(self, model):
+        #file = 'NNmodel.sav'
 
-        self.loaded_model = joblib.load(file)
+        #self.loaded_model = joblib.load(file)
+        self.model = model
     def actions(self, ownship: Dict, input_data: Dict[str, Tuple]) -> Tuple[float, float, bool]:
         # timeout(input_data)
         # 隕石と機体の位置関係のセクション
         ast_list = np.array(input_data["asteroids"])
         # (x,y)で表す，機体からの距離
-        dist_xylist = [np.array(ownship['position']) - np.array(ast['position']) for ast in ast_list]
+        position = ownship['position']
+        if isinstance(ownship['position'][0], torch.Tensor):
+            position = (position[0].item(), position[1].item())
+
+
+        dist_xylist = [position - np.array(ast['position']) for ast in ast_list]
         dist_avoid_list = dist_xylist.copy()
         dist_list1 = [math.sqrt(xy[0] ** 2 + xy[1] ** 2) for xy in dist_xylist]
 
@@ -51,7 +58,9 @@ class Controller_neuro(KesslerController):
         # ここから考えるのは近傍5つの隕石
         search_list = sorteddict[0:5]
         search_dist = np.array([math.dist(ownship['position'], ast['position']) for ast in search_list])
-        angle_dist = [np.array(ast['position']) - np.array(ownship['position']) for ast in search_list]
+
+
+        angle_dist = [np.array(ast['position']) - position for ast in search_list]
         angle_dist = [angle360(math.degrees((np.arctan2(near_ang[1], near_ang[0])))) - ownship['heading'] for near_ang
                       in angle_dist]
         aalist = []
@@ -79,9 +88,12 @@ class Controller_neuro(KesslerController):
 
 
         # 前後，回転，射撃のタプルをリターンする(thrust…±480m/s^2 turn_rate…±180/s)
-        result = self.loaded_model.predict([[avoidance, angdiff]])
-        thrust = result[0][0]
-        turn_rate = result[0][1]
+        #result = self.loaded_model.predict([[avoidance, angdiff]])
+        # [avoidance, angdiff]をtorchにする
+        """inputs = torch.Tensor([avoidance, angdiff])
+        result = self.model.forward(inputs)
+        thrust = result[0]
+        turn_rate = result[1]
         if turn_rate < -180:
             turn_rate = -180
         elif turn_rate > 180:
@@ -91,8 +103,10 @@ class Controller_neuro(KesslerController):
             thrust = 480
         elif thrust < -480:
             thrust = -480
-        print(thrust)
-        return thrust, turn_rate, fire_bullet, False
+        thrust = thrust.item()
+        turn_rate = turn_rate.item()
+        return thrust, turn_rate, True, True, inputs"""
+        return avoidance, angdiff
 
     @property
     def name(self) -> str:

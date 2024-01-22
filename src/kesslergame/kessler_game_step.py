@@ -337,8 +337,6 @@ class Game_step:
         # Finalization after scenario has been run #
         ############################################
 
-        # Close graphics display
-        #print(game_state)
 
         # Finalize score class before returning
         self.score.finalize(self.sim_time, self.stop_reason, self.ships)

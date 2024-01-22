@@ -120,8 +120,6 @@ genes = [[0.11254164610724085, 0.16871673759444591, 0.2281084405150524, 0.286483
 #print("評価終了")
 
 file_path = 'inout_list3.txt'
-
-
 with open(file_path) as f:
     lines = f.readlines()
 
@@ -137,50 +135,49 @@ for line in lines:
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 # ニューラルネットワークのモデル
 model = MLPRegressor(hidden_layer_sizes=(10, 5), max_iter=100000)
-# イテレーションごとのトレーニング
-Loss_train = []
-Loss_test = []
-NGEN = 100000
+
 """file = 'NNmodel.sav'
 loaded_model = joblib.load(file)
 print(X_test)
 result = loaded_model.predict([X_test[0]])
 print(result)"""
-for i in range(1, NGEN+1):
-    # モデルの再作成
-    model.partial_fit(X_train, y_train)
-    # テストデータで評価
-    y_pred_train = model.predict(X_train)
-    y_pred_test = model.predict(X_test)
-    # 損失関数の計算
-    loss_train = mean_squared_error(y_train, y_pred_train)
-    loss_test = mean_squared_error(y_test, y_pred_test)
 
-    Loss_train.append(loss_train)
-    Loss_test.append(loss_test)
-    if i % 2000 == 0:
+# イテレーションごとのトレーニング
+Loss_train = []
+Loss_test = []
+NGEN = 100000
+def train():
+    for i in range(1, NGEN+1):
+        # モデルの再作成
+        model.partial_fit(X_train, y_train)
+        # テストデータで評価
+        y_pred_train = model.predict(X_train)
+        y_pred_test = model.predict(X_test)
+        # 損失関数の計算
+        loss_train = mean_squared_error(y_train, y_pred_train)
+        loss_test = mean_squared_error(y_test, y_pred_test)
+
+        Loss_train.append(loss_train)
+        Loss_test.append(loss_test)
+        if i % 2000 == 0:
+            # 結果の表示
+            print(f"Iteration: {i}")
+            print("Actual Labels:")
+            print(y_test)
+            print("Predicted Labels:")
+            print(y_pred_test)
 
 
-        # 結果の表示
-        print(f"Iteration: {i}")
-        print("Actual Labels:")
-        print(y_test)
-        print("Predicted Labels:")
-        print(y_pred_test)
-
-#横方向に結合して確かめる
-
-"""file = 'NNmodel.sav'
-pickle.dump(model, open(file, 'wb'))"""
-#損失関数のプロット
-plt.figure()
-plt.plot(np.arange(0, NGEN, 1), Loss_train, label='train')
-plt.plot(np.arange(0, NGEN, 1), Loss_test, label='test')
-plt.title("Loss of Neural Network predicting game score")
-plt.xlabel("Iteration")
-plt.ylabel("Loss")
-plt.legend()
-plt.show()
+    #損失関数のプロット
+def plot_loss():
+    plt.figure()
+    plt.plot(np.arange(0, NGEN, 1), Loss_train, label='train')
+    plt.plot(np.arange(0, NGEN, 1), Loss_test, label='test')
+    plt.title("Loss of Neural Network predicting game score")
+    plt.xlabel("Iteration")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.show()
 
 
 
